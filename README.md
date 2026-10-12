@@ -8,8 +8,8 @@ A mobile-first web app that connects people already driving between Surrey, Sout
 
 | Stage | Description | Status |
 |---|---|---|
-| 1 | PRD, user journeys, data model, screen list, plan | ✅ Ready for review |
-| 2 | Clickable UI prototype (mock data) | ⏳ Waiting for Stage 1 sign-off |
+| 1 | PRD, user journeys, data model, screen list, plan | ✅ Signed off (2026-10-12) |
+| 2 | Clickable UI prototype (mock data) — [`web/`](web), [notes](docs/07-stage2-prototype.md) | ✅ Ready for review |
 | 3 | Auth, DB, RLS, publish & search | – |
 | 4 | Booking, seats, cancellation, profiles | – |
 | 5 | Reporting, feedback, analytics, admin | – |
@@ -24,6 +24,16 @@ A mobile-first web app that connects people already driving between Surrey, Sout
 4. [Screen list & UX notes](docs/04-screen-list.md)
 5. [Implementation plan, architecture & budget](docs/05-implementation-plan.md)
 6. [Legal, safety & privacy open items](docs/06-legal-safety-privacy.md)
+7. [Stage 2 prototype: how to run, demo script, test results](docs/07-stage2-prototype.md)
+
+## Decision log
+
+| Date | Decision |
+|---|---|
+| 2026-10-12 | The 11 placeholder pickup zones are approved as the starting set |
+| 2026-10-12 | $15 per passenger is the placeholder contribution cap until legal and insurance review |
+| 2026-10-12 | Feedback stays private (no public ratings) during the pilot |
+| 2026-10-12 | Hosting defaults to Cloudflare Pages (owner hasn't chosen; can change before deploy) |
 
 ## Planned stack
 React + TypeScript (Vite, Tailwind) · Supabase (Postgres, Auth, RLS, Storage, Edge Functions) · static hosting on a free tier · no maps API in the pilot (zone-based matching).
