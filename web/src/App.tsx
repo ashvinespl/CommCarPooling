@@ -18,7 +18,8 @@ import { EmptyState } from './components/ui';
 
 export function App() {
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  // Braces matter: whatever an effect returns, React later calls as cleanup.
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return (
     <Routes>
       <Route element={<Layout />}>
