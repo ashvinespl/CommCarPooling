@@ -215,8 +215,10 @@ function ExportSettings() {
   const { db, me, run } = useApp();
   const [cap, setCap] = useState(String(db.settings.maxContributionCents / 100));
   const [late, setLate] = useState(String(db.settings.lateCancelHours));
+  const [preview, setPreview] = useState('');
   const download = () => {
     const csv = anonymizedBookingsCsv(db, (id) => zoneById(id).name);
+    setPreview(csv);
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const a = document.createElement('a'); a.href = url; a.download = `pilot-bookings-anonymized-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
@@ -227,6 +229,10 @@ function ExportSettings() {
         <h2 className="h2">Anonymized export</h2>
         <p className="text-sm text-ink-700">One row per booking: date, hour, zones, seats, contribution, status, outcomes, settlement and minutes saved. No names, emails, phone numbers, IDs, messages or free text.</p>
         <button className="btn-primary" onClick={download}>Download CSV</button>
+        {preview && <>
+          <label htmlFor="csv-preview" className="label pt-2">Exported rows (if your browser blocked the download, copy them from here)</label>
+          <textarea id="csv-preview" readOnly rows={6} className="input font-mono text-xs" value={preview} />
+        </>}
       </div>
       <form className="card space-y-3" onSubmit={(e) => { e.preventDefault(); run((d) => updateSettings(d, me!.id, { maxContributionCents: Math.round(Number(cap) * 100), lateCancelHours: Number(late) }), 'Settings saved.'); }}>
         <h2 className="h2">Pilot settings</h2>

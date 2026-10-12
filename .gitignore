@@ -8,3 +8,4 @@ supabase/.temp/
 *.log
 test-results/
 playwright-report/
+dist-preview/

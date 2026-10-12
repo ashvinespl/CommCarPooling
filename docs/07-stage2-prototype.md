@@ -35,6 +35,9 @@ npm run e2e          # Playwright smoke tests at 360 px phone + desktop (needs C
                      #   set PW_CHROMIUM_PATH to use an installed one)
 ```
 
+## Single-file preview
+`node scripts/build-preview.mjs out.html` (run in `web/`) builds the whole prototype as one self-contained HTML file with in-page routing. That's useful for a private shareable link without setting up hosting.
+
 ## Deploy a preview (Cloudflare Pages, free)
 1. Push the repo to GitHub.
 2. Cloudflare dashboard → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → select the repo.

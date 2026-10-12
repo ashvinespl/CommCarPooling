@@ -75,7 +75,7 @@ function BookingRow({ booking: b, asDriver }: { booking: Booking; asDriver: bool
 export function BookingDetail() {
   const { id = '' } = useParams();
   const [params] = useSearchParams();
-  const { db, me, now, run } = useApp();
+  const { db, me, now, run, notify } = useApp();
   const [body, setBody] = useState('');
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -119,7 +119,8 @@ export function BookingDetail() {
           <p className="font-semibold text-brand-900">Meeting point</p><p>{t.meetingPoint ?? 'Ask the driver in messages.'}</p>
           <p className="mt-2 font-semibold text-brand-900">Vehicle</p><p>{t.vehicle ?? 'Not specified'}</p>
           {other.sharePhoneAfterAccept && other.phone && me!.sharePhoneAfterAccept && <><p className="mt-2 font-semibold text-brand-900">Phone</p><p>{other.phone}</p></>}
-          <button className="btn-outline mt-3 min-h-[36px] w-full bg-white" onClick={() => navigator.clipboard?.writeText(shareText)}>Copy trip details to share with someone you trust</button>
+          <button className="btn-outline mt-3 min-h-[36px] w-full bg-white" onClick={() => { navigator.clipboard?.writeText(shareText).then(() => notify('success', 'Trip details copied.'), () => notify('error', 'Couldn’t copy. Select the text below instead.')); }}>Copy trip details to share with someone you trust</button>
+          <p className="mt-2 select-all rounded-lg bg-white p-2 text-xs text-ink-700">{shareText}</p>
         </div>
       )}
 

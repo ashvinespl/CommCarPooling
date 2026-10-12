@@ -51,7 +51,7 @@ test('passenger requests, driver accepts, passenger sees meeting point', async (
   await demoAs(page, 'u-marco');
   await page.goto('/bookings');
   await page.getByRole('link', { name: /Driver: Harj S\./ }).first().click();
-  await expect(page.getByText('Guildford Recreation Centre lot')).toBeVisible();
+  await expect(page.getByText('Guildford Recreation Centre lot', { exact: true })).toBeVisible();
   await page.getByLabel('Message', { exact: true }).fill('See you there');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(page.getByText('See you there')).toBeVisible();

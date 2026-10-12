@@ -7,7 +7,7 @@ const DRAFT = (
   </p>
 );
 
-const PAGES: Record<string, { title: string; body: JSX.Element }> = {
+export const PAGES: Record<string, { title: string; body: JSX.Element }> = {
   terms: { title: 'Terms of Use', body: <>{DRAFT}<ul className="list-disc space-y-2 pl-5">
     <li>This platform helps people find and arrange personal, cost-shared carpools. We are not a transportation provider, taxi or ride-hailing service.</li>
     <li>You must be 18 or older. Drivers must hold a valid licence and insurance, and only offer seats on trips they are already making.</li>

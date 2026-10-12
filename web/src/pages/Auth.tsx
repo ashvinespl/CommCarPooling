@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/AppState';
-import { Field, PageHeader, PrivateBadge } from '../components/ui';
+import { Field, Modal, PageHeader, PrivateBadge } from '../components/ui';
+import { PAGES } from './Info';
 import { registerUser } from '../mock/engine';
 import type { RolePref } from '../types';
 
@@ -79,6 +80,10 @@ export function Onboarding() {
   const [f, setF] = useState({ displayName: '', fullName: '', role: 'passenger' as RolePref, phone: '', age: false, terms: false, privacy: false, safety: false, driverDecl: false, source: '' });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
   const isDriver = f.role !== 'passenger';
+  const [policy, setPolicy] = useState<string | null>(null);
+  const PolicyLink = ({ page, children }: { page: string; children: React.ReactNode }) => (
+    <button type="button" className="underline" onClick={(e) => { e.preventDefault(); setPolicy(page); }}>{children}</button>
+  );
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -128,13 +133,16 @@ export function Onboarding() {
         <fieldset className="space-y-2 rounded-xl bg-stone-50 p-3 text-sm">
           <legend className="sr-only">Agreements</legend>
           <Check checked={f.age} onChange={(v) => set('age', v)}>I am 18 or older.</Check>
-          <Check checked={f.terms} onChange={(v) => set('terms', v)}>I agree to the <Link className="underline" to="/info/terms" target="_blank">Terms of Use</Link>.</Check>
-          <Check checked={f.privacy} onChange={(v) => set('privacy', v)}>I have read the <Link className="underline" to="/info/privacy" target="_blank">Privacy Notice</Link>.</Check>
-          <Check checked={f.safety} onChange={(v) => set('safety', v)}>I will follow the <Link className="underline" to="/info/safety" target="_blank">Community Safety Rules</Link>.</Check>
+          <Check checked={f.terms} onChange={(v) => set('terms', v)}>I agree to the <PolicyLink page="terms">Terms of Use</PolicyLink>.</Check>
+          <Check checked={f.privacy} onChange={(v) => set('privacy', v)}>I have read the <PolicyLink page="privacy">Privacy Notice</PolicyLink>.</Check>
+          <Check checked={f.safety} onChange={(v) => set('safety', v)}>I will follow the <PolicyLink page="safety">Community Safety Rules</PolicyLink>.</Check>
         </fieldset>
         {isDriver && <DriverDeclarationChecks checked={f.driverDecl} onChange={(v) => set('driverDecl', v)} />}
         <button className="btn-primary w-full">Finish</button>
       </form>
+      <Modal open={!!policy} title={policy ? PAGES[policy].title : ''} onClose={() => setPolicy(null)}>
+        <div className="max-h-[60vh] overflow-y-auto text-sm leading-relaxed text-ink-700">{policy && PAGES[policy].body}</div>
+      </Modal>
     </div>
   );
 }
