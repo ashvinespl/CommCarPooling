@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { Field, Modal, PageHeader, PrivateBadge } from '../components/ui';
 import { PAGES } from './Info';

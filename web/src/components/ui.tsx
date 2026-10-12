@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from './Link';
 import type { BookingStatus, User, ZoneId } from '../types';
 import { initials, money } from '../lib/format';
 import { ZONES, zoneById } from '../mock/zones';

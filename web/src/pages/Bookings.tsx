@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { canGiveFeedback, cancelBooking, getBooking, getTrip, getUser, isBookingParty, respondToBooking, sendMessage } from '../mock/engine';
 import { Avatar, EmptyState, Modal, PageHeader, StatusPill } from '../components/ui';

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import { App } from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppStateProvider } from './state/AppState';
 import './index.css';
 
@@ -10,10 +11,12 @@ const Router = import.meta.env.VITE_ROUTER === 'memory' ? MemoryRouter : Browser
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Router>
+    <ErrorBoundary>
+      <Router>
       <AppStateProvider>
         <App />
       </AppStateProvider>
     </Router>
+    </ErrorBoundary>
   </StrictMode>,
 );

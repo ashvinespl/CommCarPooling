@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { FooterLinks } from '../components/Layout';
 

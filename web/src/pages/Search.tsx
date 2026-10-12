@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { searchTrips, seatsLeft, getUser } from '../mock/engine';
 import { Avatar, Contribution, EmptyState, PageHeader, RouteLine, ZoneSelect } from '../components/ui';

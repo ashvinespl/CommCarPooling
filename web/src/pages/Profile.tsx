@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { completedRideCount, getTrip, getUser, unblockUser, updateProfile } from '../mock/engine';
 import { Avatar, PageHeader, PrivateBadge, StatusPill } from '../components/ui';

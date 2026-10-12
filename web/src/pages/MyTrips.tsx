@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { cancelTrip, publishTrip } from '../mock/engine';
 import { EmptyState, Modal, PageHeader, RouteLine } from '../components/ui';

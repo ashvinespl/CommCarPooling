@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { canSeePrivateDetails, completedRideCount, getTrip, getUser, isBlockedBetween, isOpen, requestSeat, seatsLeft } from '../mock/engine';
 import { Avatar, Contribution, ContributionNotice, EmptyState, PageHeader, StatusPill, ZoneSelect } from '../components/ui';

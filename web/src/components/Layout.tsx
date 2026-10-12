@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from './Link';
 import { useApp } from '../state/AppState';
 
 const tabs = [

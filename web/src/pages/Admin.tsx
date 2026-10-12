@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { anonymizedBookingsCsv, computeMetrics, getTrip, getUser, setAccountStatus, updateReport, updateSettings } from '../mock/engine';
 import { Modal, PageHeader, StatusPill } from '../components/ui';
