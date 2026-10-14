@@ -34,6 +34,7 @@ export interface User {
   avatarColor: string;   // stands in for an optional photo
   createdAt: string;
   driverDeclaredAt?: string;
+  respectPledgeAt?: string;
   status: 'active' | 'suspended';
   suspendedReason?: string;
   isAdmin: boolean;

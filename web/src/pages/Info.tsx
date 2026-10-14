@@ -12,6 +12,10 @@ export const PAGES: Record<string, { title: string; body: JSX.Element }> = {
     <li>This platform helps people find and arrange personal, cost-shared carpools. We are not a transportation provider, taxi or ride-hailing service.</li>
     <li>You must be 18 or older. Drivers must hold a valid licence and insurance, and only offer seats on trips they are already making.</li>
     <li>Contributions are proposed by drivers toward trip costs, are not fares, and are settled directly between users.</li>
+    <li>Members agree to treat drivers and passengers with respect.</li>
+    <li>Drivers may decline a request or end a ride at any time, before or during the trip.</li>
+    <li>The platform does not provide or arrange insurance. Vehicle insurance is each driver’s own responsibility and choice.</li>
+    <li>In an emergency, call 911. The platform is not an emergency service.</li>
     <li>We may suspend accounts that break these terms or the Community Safety Rules.</li>
     <li>Final terms, including liability and dispute provisions, will be prepared with legal counsel before launch.</li>
   </ul></> },
@@ -23,12 +27,13 @@ export const PAGES: Record<string, { title: string; body: JSX.Element }> = {
   </ul></> },
   safety: { title: 'Community Safety Rules', body: <>{DRAFT}<ul className="list-disc space-y-2 pl-5">
     <li>Meet only at public pickup zones. Never share your home address.</li>
-    <li>Be respectful. Harassment and discrimination aren’t tolerated.</li>
+    <li><b>Respect pledge:</b> treat drivers and passengers with respect. Be courteous and on time. Harassment and discrimination aren’t tolerated.</li>
+    <li>Drivers may decline a request or end a ride at any time, before or during the trip.</li>
     <li>Drivers: no impairment, obey traffic laws, everyone wears a seatbelt, and use child seats as required by law.</li>
     <li>Anyone may decline or end a ride if they feel unsafe.</li>
     <li>Share your trip details with someone you trust.</li>
-    <li>In an emergency, call 911. Then report it to us in the app.</li>
-    <li>We don’t verify identity, licences or insurance. Use your judgement.</li>
+    <li><b>In an emergency, call 911 first.</b> Then report it to us in the app.</li>
+    <li>We don’t verify identity, licences or insurance, and we don’t provide insurance. Vehicle insurance is each driver’s own responsibility. Use your judgement.</li>
   </ul></> },
   contributions: { title: 'How contributions work', body: <ul className="list-disc space-y-2 pl-5">
     <li>Drivers may propose a per-passenger contribution toward trip costs such as fuel, parking and wear. They can also ask for nothing.</li>
@@ -40,6 +45,9 @@ export const PAGES: Record<string, { title: string; body: JSX.Element }> = {
     <div><b>How long is the pilot?</b><p>Four weeks, covering Surrey, South Surrey and White Rock.</p></div>
     <div><b>Will there always be a ride?</b><p>No. Trips depend on what neighbours publish. If nothing fits, tell us the ride you need.</p></div>
     <div><b>Are drivers verified?</b><p>No. Drivers self-declare that they hold a licence and insurance. We don’t verify this.</p></div>
+    <div><b>Does the platform provide insurance?</b><p>No. Vehicle insurance is each driver’s own responsibility and choice.</p></div>
+    <div><b>Can a driver turn me down?</b><p>Yes. Drivers may decline a request or end a ride at any time, before or during the trip.</p></div>
+    <div><b>What do I do in an emergency?</b><p>Call 911 first. Then report it to us in the app.</p></div>
     <div><b>What if someone cancels?</b><p>Either party can cancel in the app. Cancelling within 2 hours of departure is recorded as a late cancellation.</p></div>
   </div> },
 };

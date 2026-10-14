@@ -78,12 +78,13 @@ export function searchTrips(db: Db, viewerId: string | undefined, q: SearchQuery
 // ---------------------------------------------------------------- accounts
 export interface RegistrationInput {
   email: string; displayName: string; fullName: string; role: RolePref; phone?: string;
-  ageConfirmed: boolean; consents: boolean; driverDeclaration: boolean; acquisitionSource?: string;
+  ageConfirmed: boolean; consents: boolean; respectPledge: boolean; driverDeclaration: boolean; acquisitionSource?: string;
 }
 
 export function registerUser(db: Db, input: RegistrationInput, now: Date): { db: Db; userId: string } {
   if (!input.ageConfirmed) fail('You must be 18 or older to use the pilot.');
   if (!input.consents) fail('Please accept the Terms, Privacy Notice and Community Safety Rules.');
+  if (!input.respectPledge) fail('Please agree to treat drivers and passengers with respect.');
   if (!input.displayName.trim() || input.displayName.length > 40) fail('Display name must be 1–40 characters.');
   if (!input.fullName.trim()) fail('Full name is required (kept private).');
   if (input.role !== 'passenger' && !input.driverDeclaration) fail('Drivers must accept the driver declaration.');
@@ -95,7 +96,7 @@ export function registerUser(db: Db, input: RegistrationInput, now: Date): { db:
     id, email: input.email, displayName: input.displayName.trim(), fullName: input.fullName.trim(),
     phone: input.phone || undefined, sharePhoneAfterAccept: false, role: input.role,
     avatarColor: palette[next.users.length % palette.length], createdAt: nowIso(now),
-    driverDeclaredAt: input.driverDeclaration ? nowIso(now) : undefined,
+    driverDeclaredAt: input.driverDeclaration ? nowIso(now) : undefined, respectPledgeAt: nowIso(now),
     status: 'active', isAdmin: false, acquisitionSource: input.acquisitionSource || undefined,
   });
   return { db: next, userId: id };
@@ -231,6 +232,37 @@ export function cancelBooking(db: Db, userId: string, bookingId: string, reason:
   b.lateCancellation = b.status === 'accepted' && isLate(next, t, now);
   b.status = 'cancelled'; b.cancelledAt = nowIso(now); b.cancelledBy = userId; b.cancelReason = reason || undefined;
   return next;
+}
+
+/**
+ * Drivers may decline a passenger at any time, before or during the ride.
+ * Not counted as a late cancellation; releases the seat.
+ */
+export function driverDeclineBooking(db: Db, userId: string, bookingId: string, reason: string, now: Date): Db {
+  const next = clone(db);
+  const b = getBooking(next, bookingId) ?? fail('Booking not found.');
+  const t = getTrip(next, b.tripId)!;
+  if (t.driverId !== userId) fail('Only the driver can decline this booking.');
+  if (b.status !== 'pending' && b.status !== 'accepted') fail('This booking can no longer be declined.');
+  if (b.status === 'accepted') {
+    t.seatsBooked -= b.seats;
+    b.cancelledAt = nowIso(now);
+  }
+  b.status = 'declined';
+  b.respondedAt = b.respondedAt ?? nowIso(now);
+  b.cancelledBy = userId;
+  b.cancelReason = reason || undefined;
+  b.lateCancellation = false;
+  return next;
+}
+
+/** Bookings by trip date: upcoming soonest first, then past trips most recent first. */
+export function sortBookingsByDate(db: Db, bookings: Booking[], now: Date): Booking[] {
+  const dep = (b: Booking) => new Date(getTrip(db, b.tripId)!.departureAt).getTime();
+  const t = now.getTime();
+  const upcoming = bookings.filter((b) => dep(b) > t).sort((a, b) => dep(a) - dep(b));
+  const past = bookings.filter((b) => dep(b) <= t).sort((a, b) => dep(b) - dep(a));
+  return [...upcoming, ...past];
 }
 
 /** Equivalent of the scheduled expire_departed() job. */
@@ -382,7 +414,8 @@ export function computeMetrics(db: Db): PilotMetrics {
   const drivers = db.users.filter((u) => u.role !== 'passenger' && !u.isAdmin).length;
   const passengers = db.users.filter((u) => u.role !== 'driver' && !u.isAdmin).length;
   const activated = new Set([...db.trips.map((t) => t.driverId), ...db.bookings.map((b) => b.passengerId)]);
-  const accepted = db.bookings.filter((b) => b.respondedAt && b.status !== 'declined');
+  // Accepted at some point (a driver may later decline an accepted passenger).
+  const accepted = db.bookings.filter((b) => b.respondedAt && (b.status !== 'declined' || b.cancelledAt));
   const answered = db.bookings.filter((b) => b.respondedAt || b.status === 'expired');
   const cancelledAfterAccept = db.bookings.filter((b) => b.status === 'cancelled' && b.respondedAt);
   const completed = db.bookings.filter((b) => b.status === 'completed');

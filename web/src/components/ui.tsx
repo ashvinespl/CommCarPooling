@@ -83,6 +83,19 @@ export function ContributionNotice() {
   );
 }
 
+export const INSURANCE_NOTE = 'This platform does not provide or arrange insurance. Vehicle insurance is each driver’s own responsibility and choice.';
+export const DRIVER_RIGHT_NOTE = 'Drivers may decline a request or end a ride at any time, before or during the trip.';
+
+/** Emergency + insurance notice shown wherever people arrange or take a ride. */
+export function SafetyNotice({ className = '' }: { className?: string }) {
+  return (
+    <div role="note" className={`rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-900 ${className}`}>
+      <p><strong>Emergency? Call 911 first.</strong> This platform is not an emergency service. Report the incident to us in the app afterwards.</p>
+      <p className="mt-1">{INSURANCE_NOTE}</p>
+    </div>
+  );
+}
+
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="card flex flex-col items-center gap-2 py-8 text-center">

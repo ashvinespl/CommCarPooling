@@ -47,8 +47,8 @@ npm run e2e          # Playwright smoke tests at 360 px phone + desktop (needs C
 Cost: $0. No custom domain is needed for the prototype.
 
 ## Test results (run 2026-10-12 in this environment)
-* **Unit (Vitest):** 16/16 passed. They cover search matching and filters, overbooking, duplicate and own-trip requests, driver-only responses, seat release on cancel, late-cancel flag, trip cancellation, suspension, expiry, meeting-point privacy, the CSV having no PII, publish validation, feedback rules and registration rules.
-* **End-to-end (Playwright, Chromium):** 16/16 passed: 8 flows × 2 viewports (360 × 780 phone, desktop). They include checks that no page scrolls horizontally on key pages.
+* **Unit (Vitest):** 20/20 passed (re-run 2026-10-14). They cover bookings sorted by date, drivers declining before or during a ride, the respect pledge, search matching and filters, overbooking, duplicate and own-trip requests, driver-only responses, seat release on cancel, late-cancel flag, trip cancellation, suspension, expiry, meeting-point privacy, the CSV having no PII, publish validation, feedback rules and registration rules.
+* **End-to-end (Playwright, Chromium):** 20/20 passed: 10 flows × 2 viewports (360 × 780 phone, desktop). They include checks that no page scrolls horizontally on key pages.
 * Not tested yet: real iOS Safari and real Android devices (Stage 6 test matrix), screen readers, or any backend.
 
 ## What's deliberately fake

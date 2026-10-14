@@ -92,7 +92,7 @@ export function FooterLinks() {
       <Link to="/info/safety" className="hover:underline">Community Safety Rules</Link>
       <Link to="/info/contributions" className="hover:underline">How contributions work</Link>
       <Link to="/info/faq" className="hover:underline">Pilot FAQ</Link>
-      <span>Emergency? Call 911. This platform is not an emergency service.</span>
+      <span>Emergency? Call 911. This platform is not an emergency service and does not provide insurance.</span>
     </div>
   );
 }

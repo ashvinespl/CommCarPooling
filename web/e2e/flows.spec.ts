@@ -71,6 +71,9 @@ test('new user signs up and completes onboarding with consents', async ({ page }
   await page.getByLabel('I am 18 or older.').check();
   for (const n of ['I agree to the Terms of Use.', 'I have read the Privacy Notice.', 'I will follow the Community Safety Rules.']) await page.getByLabel(n).check();
   await page.getByRole('button', { name: 'Finish' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'with respect' })).toBeVisible(); // pledge required
+  await page.getByLabel(/I will treat drivers and passengers with respect/).check();
+  await page.getByRole('button', { name: 'Finish' }).click();
   await expect(page.getByRole('heading', { name: 'Find a ride' })).toBeVisible();
   await expect(page.locator('#demo-user')).toHaveValue(/^u-/);
 });
@@ -135,4 +138,26 @@ test('suspended user cannot request a seat', async ({ page }) => {
   await page.getByRole('link', { name: /Harj S\./ }).first().click();
   await page.getByRole('button', { name: 'Send request' }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'suspended' }).first()).toBeVisible();
+});
+
+test('bookings are listed by trip date: upcoming soonest first, then past', async ({ page }) => {
+  await demoAs(page, 'u-priya');
+  await page.goto('/bookings');
+  const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
+  expect(headings[0]).toMatch(/^Upcoming/);
+  expect(headings[1]).toMatch(/^Past/);
+});
+
+test('driver can decline an accepted passenger; safety and insurance notices shown', async ({ page }) => {
+  await demoAs(page, 'u-glen');
+  await page.goto('/bookings/b-3');
+  await expect(page.getByText('Emergency? Call 911 first.')).toBeVisible();
+  await expect(page.getByText(/does not provide or arrange insurance/)).toBeVisible();
+  await page.getByRole('button', { name: 'Decline passenger' }).click();
+  await page.getByLabel('Reason (optional, shared with the passenger)').fill('Plans changed');
+  await page.getByRole('dialog').getByRole('button', { name: 'Decline passenger' }).click();
+  await expect(page.getByText('Declined').first()).toBeVisible();
+  await demoAs(page, 'u-priya');
+  await page.goto('/bookings/b-3');
+  await expect(page.getByText(/The driver declined this booking after accepting it: Plans changed/)).toBeVisible();
 });

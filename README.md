@@ -34,6 +34,10 @@ A mobile-first web app that connects people already driving between Surrey, Sout
 | 2026-10-12 | $15 per passenger is the placeholder contribution cap until legal and insurance review |
 | 2026-10-12 | Feedback stays private (no public ratings) during the pilot |
 | 2026-10-12 | Hosting defaults to Cloudflare Pages (owner hasn't chosen; can change before deploy) |
+| 2026-10-14 | Bookings are sorted by trip date (upcoming soonest first, then past) |
+| 2026-10-14 | Members pledge to treat drivers and passengers with respect (required at sign-up) |
+| 2026-10-14 | Drivers may decline a request or end a ride at any time, before or during the trip. It isn't counted as a late cancellation |
+| 2026-10-14 | Emergencies → 911. The platform doesn't provide insurance; it's each driver's own responsibility (wording pending legal review) |
 
 ## Planned stack
 React + TypeScript (Vite, Tailwind) · Supabase (Postgres, Auth, RLS, Storage, Edge Functions) · static hosting on a free tier · no maps API in the pilot (zone-based matching).
@@ -46,4 +50,4 @@ Requires PostgreSQL 15+ binaries (`initdb`, `pg_ctl`, `psql`). Run as a non-root
 PG_BIN=/usr/lib/postgresql/16/bin ./docs/schema/tests/run_tests.sh
 ```
 
-This starts a throwaway database, loads a stub of Supabase's `auth` schema, applies the proposed schema, and runs 58 behavioural checks (RLS, privacy, booking rules) plus a concurrent "last seat" race test.
+This starts a throwaway database, loads a stub of Supabase's `auth` schema, applies the proposed schema, and runs 64 behavioural checks (RLS, privacy, booking rules) plus a concurrent "last seat" race test.

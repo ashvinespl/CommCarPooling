@@ -117,6 +117,7 @@ create table public.profile_private (
   terms_accepted_at        timestamptz not null,
   privacy_accepted_at      timestamptz not null,
   safety_rules_accepted_at timestamptz not null,
+  respect_pledge_at        timestamptz not null, -- pledge to treat drivers and passengers with respect
   -- Driver self-declarations (NOT verification — never displayed as "verified")
   driver_declared_at       timestamptz,     -- valid licence, valid insurance, personal (non-commercial) trips
   account_status           public.account_status not null default 'active',
@@ -363,7 +364,7 @@ create trigger trips_touch before update on public.trips
 create or replace function public.complete_registration(
   p_display_name text, p_full_name text, p_role public.role_pref,
   p_phone text, p_age_confirmed boolean, p_terms_version text,
-  p_driver_declaration boolean, p_acquisition_source text default null
+  p_driver_declaration boolean, p_respect_pledge boolean, p_acquisition_source text default null
 ) returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
@@ -372,11 +373,14 @@ begin
   if p_role in ('driver', 'both') and not coalesce(p_driver_declaration, false) then
     raise exception 'Drivers must accept the driver declaration';
   end if;
+  if not coalesce(p_respect_pledge, false) then
+    raise exception 'Please agree to treat drivers and passengers with respect';
+  end if;
   insert into profiles (id, display_name, role_pref) values (uid, p_display_name, p_role);
   insert into profile_private (user_id, full_name, phone, age_confirmed_18_plus, terms_version,
                                terms_accepted_at, privacy_accepted_at, safety_rules_accepted_at,
-                               driver_declared_at, acquisition_source)
-  values (uid, p_full_name, nullif(p_phone, ''), true, p_terms_version, now(), now(), now(),
+                               respect_pledge_at, driver_declared_at, acquisition_source)
+  values (uid, p_full_name, nullif(p_phone, ''), true, p_terms_version, now(), now(), now(), now(),
           case when p_driver_declaration then now() end, p_acquisition_source);
 end $$;
 
@@ -554,6 +558,31 @@ begin
      set status = 'cancelled', cancelled_at = now(), cancelled_by = uid, cancel_reason = p_reason,
          late_cancellation = (b.status = 'accepted'
                               and t.departure_at - now() < make_interval(hours => setting_int('late_cancel_hours')))
+   where id = b.id;
+end $$;
+
+-- Drivers may decline a passenger at any time, before or during the ride.
+-- Not counted as a late cancellation; the seat is released. Admins can see
+-- these via cancelled_by/cancel_reason on bookings that had been accepted.
+create or replace function public.driver_decline_booking(p_booking uuid, p_reason text default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  b bookings%rowtype;
+  t trips%rowtype;
+begin
+  select * into b from bookings where id = p_booking;
+  if not found then raise exception 'Booking not found'; end if;
+  select * into t from trips where id = b.trip_id for update;
+  if t.driver_id <> auth.uid() then raise exception 'Only the driver can decline this booking'; end if;
+  select * into b from bookings where id = p_booking for update;
+  if b.status not in ('pending', 'accepted') then raise exception 'This booking can no longer be declined'; end if;
+  if b.status = 'accepted' then
+    update trips set seats_booked = seats_booked - b.seats where id = t.id;
+  end if;
+  update bookings
+     set status = 'declined', responded_at = coalesce(responded_at, now()),
+         cancelled_at = case when b.status = 'accepted' then now() end,
+         cancelled_by = auth.uid(), cancel_reason = p_reason, late_cancellation = false
    where id = b.id;
 end $$;
 
@@ -772,12 +801,13 @@ grant execute on function public.is_admin(), public.is_active_user(uuid), public
                           public.setting_int(text)
   to anon, authenticated;
 grant execute on function
-  public.complete_registration(text, text, public.role_pref, text, boolean, text, boolean, text),
+  public.complete_registration(text, text, public.role_pref, text, boolean, text, boolean, boolean, text),
   public.publish_trip(smallint, smallint, smallint[], timestamptz, smallint, integer, boolean, text, text, text, text),
   public.link_round_trip(uuid, uuid),
   public.request_seat(uuid, smallint, smallint, smallint, text),
   public.respond_to_booking(uuid, boolean),
   public.cancel_booking(uuid, text),
+  public.driver_decline_booking(uuid, text),
   public.cancel_trip(uuid, text),
   public.submit_trip_feedback(uuid, public.ride_outcome, public.settlement, smallint, boolean, smallint, text, integer, boolean, text),
   public.admin_set_account_status(uuid, public.account_status, text)
@@ -792,7 +822,7 @@ select d::date as day,
   (select count(*) from public.profiles p where p.created_at::date = d::date)                      as new_users,
   (select count(*) from public.trips t where t.created_at::date = d::date)                         as trips_published,
   (select count(*) from public.bookings b where b.created_at::date = d::date)                      as seat_requests,
-  (select count(*) from public.bookings b where b.responded_at::date = d::date and b.status <> 'declined') as requests_accepted,
+  (select count(*) from public.bookings b where b.responded_at::date = d::date and (b.status <> 'declined' or b.cancelled_at is not null)) as requests_accepted,
   (select count(*) from public.bookings b where b.cancelled_at::date = d::date)                    as cancellations,
   (select count(*) from public.trip_feedback f where f.created_at::date = d::date and f.outcome = 'completed') as completed_reports,
   (select count(*) from public.trip_feedback f where f.created_at::date = d::date and f.outcome in ('driver_no_show','passenger_no_show')) as no_show_reports

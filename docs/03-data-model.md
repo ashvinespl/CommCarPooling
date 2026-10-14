@@ -48,7 +48,7 @@ analytics_events (anon_id, optional user)  admin_actions (audit)   app_settings
 
 1. **Zones instead of addresses.** Matching uses an ordered list of admin-defined zones (`trip_stops`). A trip matches if it contains the passenger's pickup zone **before** their drop-off zone. This needs no geocoding, routing or maps API, costs $0, and avoids storing home addresses. If the pilot works, PostGIS distance-to-route matching can replace it later without changing the booking model.
 2. **Public / private split by table, not column.** Phone numbers, consents, account status and exact meeting points live in separate tables with stricter RLS, so a careless `select *` can't leak them.
-3. **Writes through DB functions.** `publish_trip`, `request_seat`, `respond_to_booking`, `cancel_booking`, `cancel_trip`, `submit_trip_feedback` and `admin_set_account_status` are `SECURITY DEFINER` functions with explicit authorization checks. Clients have no direct `INSERT/UPDATE` on `trips` (except notes) or `bookings`. This keeps all business rules in one place and means a future native app automatically gets the same rules.
+3. **Writes through DB functions.** `publish_trip`, `request_seat`, `respond_to_booking`, `driver_decline_booking`, `cancel_booking`, `cancel_trip`, `submit_trip_feedback` and `admin_set_account_status` are `SECURITY DEFINER` functions with explicit authorization checks. Clients have no direct `INSERT/UPDATE` on `trips` (except notes) or `bookings`. This keeps all business rules in one place and means a future native app automatically gets the same rules.
 4. **Overbooking prevention, three layers:**
    * `respond_to_booking` takes `SELECT … FOR UPDATE` on the trip row, so accepts on the same trip are serialized;
    * `CHECK (seats_booked BETWEEN 0 AND seats_total)` on `trips` as a final guard;
@@ -70,7 +70,7 @@ CSV exports will include only: random per-export IDs (not DB UUIDs), zone names,
 ## Testing
 `schema/tests/run_tests.sh` starts a throwaway PostgreSQL 16, loads a minimal stub of Supabase's `auth` schema and roles, loads the proposed schema and runs:
 
-* **58 sequential checks:** registration rules, publish validation, anonymous vs signed-in search, direction-aware matching, filters, privacy (private profile, meeting-point visibility, column-level update restrictions), booking rules (own trip, duplicates, seat limits, route order), accept/decline, cancellation and seat release, late-cancel flags, messaging RLS, blocking, reports visibility, admin suspension, feedback timing, uniqueness and privacy.
+* **64 sequential checks:** registration rules (incl. respect pledge), publish validation, anonymous vs signed-in search, direction-aware matching, filters, privacy (private profile, meeting-point visibility, column-level update restrictions), booking rules (own trip, duplicates, seat limits, route order), accept/decline, driver declining before or during the ride, cancellation and seat release, late-cancel flags, messaging RLS, blocking, reports visibility, admin suspension, feedback timing, uniqueness and privacy.
 * **1 concurrency test:** two separate DB sessions accept the last seat at the same moment; it asserts exactly one succeeds and `seats_booked = 1`.
 
-Last run (2026-10-12, PostgreSQL 16, this container): **all passed**. Caveat: the stub is not real Supabase. In Stage 3 the same tests should be re-run against the Supabase local stack (`supabase start` + `supabase test db`, pgTAP).
+Last run (2026-10-14, PostgreSQL 16, this container): **all passed**. Caveat: the stub is not real Supabase. In Stage 3 the same tests should be re-run against the Supabase local stack (`supabase start` + `supabase test db`, pgTAP).

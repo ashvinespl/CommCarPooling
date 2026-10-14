@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
 import { canSeePrivateDetails, completedRideCount, getTrip, getUser, isBlockedBetween, isOpen, requestSeat, seatsLeft } from '../mock/engine';
-import { Avatar, Contribution, ContributionNotice, EmptyState, PageHeader, StatusPill, ZoneSelect } from '../components/ui';
+import { Avatar, Contribution, ContributionNotice, DRIVER_RIGHT_NOTE, EmptyState, PageHeader, SafetyNotice, StatusPill, ZoneSelect } from '../components/ui';
 import { TrustActions } from '../components/Trust';
 import { formatDateTime, formatTime, relativeDayLabel } from '../lib/time';
 import { plural } from '../lib/format';
@@ -116,6 +116,8 @@ export function TripDetail() {
           <div><label htmlFor="bk-msg" className="label">Message to driver (optional)</label>
             <textarea id="bk-msg" rows={2} maxLength={300} className="input" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="e.g. I'll have a small backpack" /></div>
           <ContributionNotice />
+          <p className="text-xs text-ink-700">{DRIVER_RIGHT_NOTE}</p>
+          <SafetyNotice />
           <button className="btn-primary w-full" disabled={!pickup || !dropoff} onClick={submit}>{me ? 'Send request' : 'Sign in to request'}</button>
         </div>
       ) : (

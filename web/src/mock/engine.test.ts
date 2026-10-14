@@ -146,11 +146,46 @@ describe('feedback & metrics', () => {
 
   it('registration enforces age, consent and driver declaration', () => {
     const db = seed();
-    const base = { email: 'new@example.test', displayName: 'New U.', fullName: 'New User', role: 'passenger' as const, ageConfirmed: true, consents: true, driverDeclaration: false };
+    const base = { email: 'new@example.test', displayName: 'New U.', fullName: 'New User', role: 'passenger' as const, ageConfirmed: true, consents: true, respectPledge: true, driverDeclaration: false };
     expect(() => E.registerUser(db, { ...base, ageConfirmed: false }, NOW)).toThrow(/18/);
     expect(() => E.registerUser(db, { ...base, consents: false }, NOW)).toThrow(/Terms/);
+    expect(() => E.registerUser(db, { ...base, respectPledge: false }, NOW)).toThrow(/respect/);
     expect(() => E.registerUser(db, { ...base, role: 'driver' }, NOW)).toThrow(/driver declaration/);
     expect(() => E.registerUser(db, { ...base, email: 'u-dana@example.test' }, NOW)).toThrow(/already exists/);
     expect(E.registerUser(db, base, NOW).db.users).toHaveLength(db.users.length + 1);
+  });
+});
+
+describe('driver may decline at any time', () => {
+  it('declines an accepted passenger before the ride, releasing the seat without a late flag', () => {
+    let db = E.respondToBooking(seed(), 'u-dana', 'b-2', true, NOW).db;
+    const nearDeparture = new Date(new Date(E.getTrip(db, 't-dana-am-1')!.departureAt).getTime() - 10 * 60000);
+    db = E.driverDeclineBooking(db, 'u-dana', 'b-2', 'Not comfortable', nearDeparture);
+    const b = E.getBooking(db, 'b-2')!;
+    expect(b.status).toBe('declined');
+    expect(b.lateCancellation).toBe(false);
+    expect(E.getTrip(db, 't-dana-am-1')!.seatsBooked).toBe(0);
+    expect(E.computeMetrics(db).acceptedEver).toBe(3); // b-1, b-3 and b-2 (accepted before being declined)
+  });
+  it('declines during the ride (after departure)', () => {
+    const during = new Date(new Date(E.getTrip(seed(), 't-glen-1')!.departureAt).getTime() + 15 * 60000);
+    const db = E.driverDeclineBooking(seed(), 'u-glen', 'b-3', '', during);
+    expect(E.getBooking(db, 'b-3')!.status).toBe('declined');
+  });
+  it('only the driver can decline, and not once it is closed', () => {
+    expect(() => E.driverDeclineBooking(seed(), 'u-priya', 'b-3', '', NOW)).toThrow(/Only the driver/);
+    const db = E.driverDeclineBooking(seed(), 'u-glen', 'b-3', '', NOW);
+    expect(() => E.driverDeclineBooking(db, 'u-glen', 'b-3', '', NOW)).toThrow(/no longer/);
+  });
+});
+
+describe('bookings sorting', () => {
+  it('lists upcoming trips soonest first, then past trips most recent first', () => {
+    let db = seed();
+    db = E.requestSeat(db, 'u-priya', { tripId: 't-dana-am-3', pickup: 4, dropoff: 10, seats: 1 }, NOW).db;
+    db = E.requestSeat(db, 'u-priya', { tripId: 't-dana-am-1', pickup: 4, dropoff: 10, seats: 1 }, NOW).db;
+    const mine = db.bookings.filter((b) => b.passengerId === 'u-priya');
+    const sorted = E.sortBookingsByDate(db, mine, NOW).map((b) => b.tripId);
+    expect(sorted).toEqual(['t-dana-am-1', 't-glen-1', 't-dana-am-3', 't-dana-past']);
   });
 });

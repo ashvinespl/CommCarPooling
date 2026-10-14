@@ -42,17 +42,18 @@ insert into auth.users (id, email) values
 -- ---------------------------------------------------------------- registration
 set role authenticated;
 select tests.login(:drv);
-select complete_registration('Dana D.', 'Dana Driver', 'driver', '+1 604 555 0101', true, 'v0-draft', true);
+select complete_registration('Dana D.', 'Dana Driver', 'driver', '+1 604 555 0101', true, 'v0-draft', true, true);
 select tests.login(:p1);
-select complete_registration('Pat O.', 'Pat One', 'passenger', '+1 604 555 0102', true, 'v0-draft', false);
-select tests.expect_error($$select complete_registration('Kid', 'Kid', 'passenger', null, false, 'v0-draft', false)$$, '18 or older');
+select complete_registration('Pat O.', 'Pat One', 'passenger', '+1 604 555 0102', true, 'v0-draft', false, true);
+select tests.expect_error($$select complete_registration('Kid', 'Kid', 'passenger', null, false, 'v0-draft', false, true)$$, '18 or older');
 select tests.login(:p2);
-select complete_registration('Sam T.', 'Sam Two', 'passenger', null, true, 'v0-draft', false);
+select complete_registration('Sam T.', 'Sam Two', 'passenger', null, true, 'v0-draft', false, true);
 select tests.login(:p3);
-select tests.expect_error($$select complete_registration('Ty T.', 'Ty Three', 'driver', null, true, 'v0-draft', false)$$, 'driver declaration');
-select complete_registration('Ty T.', 'Ty Three', 'passenger', null, true, 'v0-draft', false);
+select tests.expect_error($$select complete_registration('Ty T.', 'Ty Three', 'passenger', null, true, 'v0-draft', false, false)$$, 'with respect');
+select tests.expect_error($$select complete_registration('Ty T.', 'Ty Three', 'driver', null, true, 'v0-draft', false, true)$$, 'driver declaration');
+select complete_registration('Ty T.', 'Ty Three', 'passenger', null, true, 'v0-draft', false, true);
 select tests.login(:adm);
-select complete_registration('Admin', 'Pilot Admin', 'passenger', null, true, 'v0-draft', false);
+select complete_registration('Admin', 'Pilot Admin', 'passenger', null, true, 'v0-draft', false, true);
 reset role;
 insert into admins (user_id) values (:adm);
 
@@ -184,6 +185,27 @@ select tests.login(:drv);
 select respond_to_booking(:'b4', true);
 select cancel_trip(:'trip2', 'Car trouble');
 select tests.check((select status = 'cancelled' and late_cancellation from bookings where id = :'b4'), 'driver trip cancellation within 2h flagged late');
+
+-- ---------------------------------------------------------------- driver may decline at any time
+select publish_trip(9::smallint, 1::smallint, '{}', now() + interval '30 minutes', 2::smallint, 500) as trip3 \gset
+select tests.login(:p1);
+select request_seat(:'trip3', 9::smallint, 1::smallint) as b5 \gset
+select tests.expect_error(format($$select driver_decline_booking(%L)$$, :'b5'), 'Only the driver');
+select tests.login(:drv);
+select respond_to_booking(:'b5', true);
+select driver_decline_booking(:'b5', 'Changed my mind');
+select tests.check((select status = 'declined' and not late_cancellation from bookings where id = :'b5'), 'driver declines accepted passenger 30 min before departure, not flagged late');
+select tests.check((select seats_booked = 0 from trips where id = :'trip3'), 'declining an accepted passenger releases the seat');
+select tests.login(:p1);
+select request_seat(:'trip3', 9::smallint, 1::smallint) as b6 \gset
+select tests.login(:drv);
+select respond_to_booking(:'b6', true);
+reset role;
+update trips set departure_at = now() - interval '10 minutes' where id = :'trip3';  -- ride under way
+set role authenticated;
+select driver_decline_booking(:'b6', 'Ended ride early');
+select tests.check((select status = 'declined' from bookings where id = :'b6'), 'driver can decline during the ride');
+select tests.expect_error(format($$select driver_decline_booking(%L)$$, :'b6'), 'no longer be declined');
 
 reset role;
 \echo 'ALL SEQUENTIAL TESTS PASSED'

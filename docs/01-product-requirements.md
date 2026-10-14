@@ -57,7 +57,7 @@ Priority: **P0** = required to launch the pilot · **P1** = strongly wanted, can
 | A1 | Email + password sign-up and login (Supabase Auth) with email confirmation | P0 |
 | A2 | Role choice: passenger, driver, or both (changeable later) | P0 |
 | A3 | Collect: **display name** (first name + last initial, public), **full name** (private), **email** (private, for login), **phone** (optional, private, used only for an opt-in post-acceptance share), **profile photo** (optional, public to signed-in users) | P0 |
-| A4 | Required consents with timestamps and version: Terms of Use, Privacy Notice, Community Safety Rules; 18+ confirmation | P0 |
+| A4 | Required consents with timestamps and version: Terms of Use, Privacy Notice, Community Safety Rules; 18+ confirmation; **pledge to treat drivers and passengers with respect** | P0 |
 | A5 | Driver self-declaration (valid BC licence, valid insurance for the vehicle, personal non-commercial trips, contribution ≤ trip costs). Stored and labelled as *self-declared*, never "verified" | P0 |
 | A6 | Password reset; account deletion request (manual admin process in pilot) | P0 / P1 |
 | A7 | "How did you hear about us?" (acquisition source) | P1 |
@@ -94,7 +94,8 @@ Priority: **P0** = required to launch the pilot · **P1** = strongly wanted, can
 | D1 | Passenger requests seat(s) with pickup/drop-off zone and optional message | P0 |
 | D2 | Driver accepts/declines; seats update atomically on accept | P0 |
 | D3 | Prevent overbooking and duplicate live requests (DB-enforced) | P0 |
-| D4 | Booking status visible to both parties: pending, accepted, declined, cancelled, expired, completed | P0 |
+| D4 | Booking status visible to both parties: pending, accepted, declined, cancelled, expired, completed. The bookings list is sorted by trip date: upcoming soonest first, then past most recent first | P0 |
+| D4a | **Drivers may decline a request or end a ride at any time, before or during the trip.** The seat is released and the passenger notified. It isn't counted as a late cancellation, and admins can see it | P0 |
 | D5 | Cancellation by either party, with pilot rules shown before confirming (see §6) | P0 |
 | D6 | Pending requests auto-expire at departure | P0 |
 | D7 | Email notifications: new request, accepted/declined, cancelled, 24-h-before reminder, post-trip survey link | P1 (request/accept/cancel are P0 if feasible) |
@@ -107,7 +108,8 @@ Priority: **P0** = required to launch the pilot · **P1** = strongly wanted, can
 | E3 | Report a user / trip / booking (categories incl. safety, harassment, no-show, commercial activity) | P0 |
 | E4 | Block a user (hides their trips and profile, prevents requests and messages) | P0 |
 | E5 | Trip and booking history | P0 |
-| E6 | Safety guidance: share trip details with a friend, meet in public, emergency → 911 | P0 |
+| E6 | Safety guidance: share trip details with a friend, meet in public. **"Emergency? Call 911 first"** is shown on the trip request, booking, onboarding, safety rules and footer | P0 |
+| E7 | **Insurance notice:** "This platform does not provide or arrange insurance. Vehicle insurance is each driver's own responsibility and choice." Shown with the 911 notice, in the driver declaration, Terms and FAQ | P0 |
 
 #### F. Pilot administration
 | ID | Requirement | Pri |
@@ -146,6 +148,7 @@ Priority: **P0** = required to launch the pilot · **P1** = strongly wanted, can
 
 ## 6. Cancellation & no-show rules (pilot, no financial penalties)
 * Either party may cancel at any time in-app; the other party is notified.
+* **Drivers may decline a request or end a ride at any time, before or during the trip** ("Decline passenger"). This is not flagged as a late cancellation, so drivers are never pressured to continue a ride they're uncomfortable with. Patterns are visible to admins.
 * Cancelling an **accepted** booking within **2 hours** of departure (configurable) is recorded as a *late cancellation*.
 * No-shows are self-reported in the post-trip survey or via "Report".
 * Two or more late cancellations or reported no-shows during the pilot → admin contacts the user; repeated → possible suspension.

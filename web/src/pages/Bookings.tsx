@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
-import { canGiveFeedback, cancelBooking, getBooking, getTrip, getUser, isBookingParty, respondToBooking, sendMessage } from '../mock/engine';
-import { Avatar, EmptyState, Modal, PageHeader, StatusPill } from '../components/ui';
+import { canGiveFeedback, cancelBooking, driverDeclineBooking, getBooking, getTrip, getUser, isBookingParty, respondToBooking, sendMessage, sortBookingsByDate } from '../mock/engine';
+import { Avatar, DRIVER_RIGHT_NOTE, EmptyState, Modal, PageHeader, SafetyNotice, StatusPill } from '../components/ui';
 import { TrustActions } from '../components/Trust';
 import { formatDateTime, formatTime } from '../lib/time';
 import { money, plural } from '../lib/format';
@@ -17,10 +17,10 @@ export function Bookings() {
   const tab = params.get('tab') === 'driver' && isDriver ? 'driver' : 'passenger';
   const mine = db.bookings.filter((b) => b.passengerId === me!.id);
   const forMyTrips = db.bookings.filter((b) => getTrip(db, b.tripId)?.driverId === me!.id);
-  const list = (tab === 'driver' ? forMyTrips : mine).slice().sort((a, b) => {
-    const order = (x: Booking) => (x.status === 'pending' ? 0 : x.status === 'accepted' ? 1 : 2);
-    return order(a) - order(b) || getTrip(db, a.tripId)!.departureAt.localeCompare(getTrip(db, b.tripId)!.departureAt);
-  });
+  const list = sortBookingsByDate(db, tab === 'driver' ? forMyTrips : mine, now);
+  const isUpcoming = (b: Booking) => new Date(getTrip(db, b.tripId)!.departureAt) > now;
+  const upcoming = list.filter(isUpcoming);
+  const past = list.filter((b) => !isUpcoming(b));
   const feedbackDue = db.bookings.filter((b) => canGiveFeedback(db, b, me!.id, now));
 
   return (
@@ -28,7 +28,7 @@ export function Bookings() {
       <PageHeader title="Bookings" />
       {feedbackDue.map((b) => (
         <Link key={b.id} to={`/bookings/${b.id}/feedback`} className="card mb-3 flex items-center justify-between border-sky-200 bg-sky-50">
-          <span className="text-sm"><b>How did your trip go?</b> {formatDateTime(getTrip(db, b.tripId)!.departureAt)}. Takes under a minute.</span>
+          <span className="text-sm"><b>How did your trip go?</b> {formatDateTime(getTrip(db, b.tripId)!.departureAt)} · Takes under a minute</span>
           <span aria-hidden>→</span>
         </Link>
       ))}
@@ -43,7 +43,12 @@ export function Bookings() {
       {list.length === 0 && (tab === 'driver'
         ? <EmptyState title="No requests yet" action={<Link to="/my-trips" className="btn-outline">My trips</Link>}>When passengers request seats on your trips, they’ll appear here.</EmptyState>
         : <EmptyState title="No bookings yet" action={<Link to="/search" className="btn-primary">Find a ride</Link>} />)}
-      <ul className="space-y-3">{list.map((b) => <li key={b.id}><BookingRow booking={b} asDriver={tab === 'driver'} /></li>)}</ul>
+      {[['Upcoming', upcoming, 'soonest first'], ['Past', past, 'most recent first']].map(([label, items, hint]) => (items as Booking[]).length > 0 && (
+        <section key={label as string} className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500">{label as string} <span className="font-normal normal-case tracking-normal">· by trip date, {hint as string}</span></h2>
+          <ul className="space-y-3">{(items as Booking[]).map((b) => <li key={b.id}><BookingRow booking={b} asDriver={tab === 'driver'} /></li>)}</ul>
+        </section>
+      ))}
     </div>
   );
 }
@@ -79,6 +84,7 @@ export function BookingDetail() {
   const { db, me, now, run, notify } = useApp();
   const [body, setBody] = useState('');
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
   const [reason, setReason] = useState('');
   const b = getBooking(db, id);
   if (!b || !(isBookingParty(db, b, me!.id) || me!.isAdmin)) return <EmptyState title="Booking not found" />;
@@ -111,7 +117,7 @@ export function BookingDetail() {
         <Link to={`/trips/${t.id}`} className="text-sm text-brand-700 underline">View trip</Link>
         {b.status === 'pending' && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{asDriver ? 'Waiting for your answer.' : 'Waiting for the driver to respond. Requests expire at departure if unanswered.'}</p>}
         {b.status === 'cancelled' && <p className="text-sm text-red-700">Cancelled{b.cancelReason ? `: ${b.cancelReason}` : ''}{b.lateCancellation ? ' (late cancellation)' : ''}</p>}
-        {b.status === 'declined' && <p className="text-sm text-ink-700">The driver couldn’t take this request. <Link className="underline" to="/search">Find another trip</Link></p>}
+        {b.status === 'declined' && <p className="text-sm text-ink-700">{b.cancelledAt ? 'The driver declined this booking after accepting it' : 'The driver couldn’t take this request'}{b.cancelReason ? `: ${b.cancelReason}` : '.'} {!asDriver && <Link className="underline" to="/search">Find another trip</Link>}</p>}
         {b.status === 'expired' && <p className="text-sm text-ink-700">This request expired without an answer. <Link className="underline" to="/ride-request">Tell us the ride you need</Link></p>}
       </div>
 
@@ -145,8 +151,27 @@ export function BookingDetail() {
         <div className="mt-3 border-t border-stone-100 pt-2"><TrustActions reportedId={other.id} bookingId={b.id} tripId={t.id} /></div>
       </div>
 
+      <SafetyNotice />
       {canGiveFeedback(db, b, me!.id, now) && <Link to={`/bookings/${b.id}/feedback`} className="btn-accent w-full">How did the trip go?</Link>}
-      {live && <button className="btn-danger w-full" onClick={() => setCancelOpen(true)}>{asDriver ? 'Cancel this passenger’s booking' : 'Cancel my booking'}</button>}
+      {live && asDriver && b.status === 'pending' && new Date(t.departureAt) > now && (
+        <button className="btn-primary w-full" onClick={() => run((d, n) => respondToBooking(d, me!.id, b.id, true, n).db, 'Accepted! The passenger can now see the meeting point.')}>Accept request</button>
+      )}
+      {live && asDriver && <button className="btn-danger w-full" onClick={() => setDeclineOpen(true)}>{b.status === 'accepted' && new Date(t.departureAt) <= now ? 'End ride / decline passenger' : 'Decline passenger'}</button>}
+      {live && !asDriver && <button className="btn-danger w-full" onClick={() => setCancelOpen(true)}>Cancel my booking</button>}
+      {!asDriver && live && <p className="text-center text-xs text-ink-500">{DRIVER_RIGHT_NOTE}</p>}
+
+      <Modal open={declineOpen} title="Decline this passenger?" onClose={() => setDeclineOpen(false)}>
+        <div className="space-y-2 text-sm text-ink-700">
+          <p>As the driver, you can decline a request or end a ride at any time, before or during the trip. {other.displayName} will be notified, and it won’t count as a late cancellation.</p>
+          <p>If you feel unsafe, stop somewhere public and safe first. <strong>In an emergency, call 911.</strong> Afterwards, please use <b>Report</b> so the pilot team can follow up.</p>
+        </div>
+        <label htmlFor="dr" className="label mt-3">Reason (optional, shared with the passenger)</label>
+        <input id="dr" className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <div className="mt-4 flex gap-2">
+          <button className="btn-outline flex-1" onClick={() => setDeclineOpen(false)}>Keep booking</button>
+          <button className="btn-danger flex-1" onClick={() => { if (run((d, n) => driverDeclineBooking(d, me!.id, b.id, reason, n), 'Passenger declined. They’ve been notified.')) setDeclineOpen(false); }}>Decline passenger</button>
+        </div>
+      </Modal>
 
       <Modal open={cancelOpen} title="Cancel booking?" onClose={() => setCancelOpen(false)}>
         <div className="space-y-2 text-sm text-ink-700">
@@ -155,6 +180,7 @@ export function BookingDetail() {
             <li>You can cancel at any time. {other.displayName} will be notified.</li>
             <li>Cancelling an accepted booking less than {db.settings.lateCancelHours} hours before departure is recorded as a <b>late cancellation</b>.</li>
             <li>Repeated late cancellations or no-shows may lead to an account review.</li>
+            <li>{DRIVER_RIGHT_NOTE}</li>
           </ul>
           {b.status === 'accepted' && lateWindow && <p className="rounded-lg bg-amber-50 p-2 text-amber-900">This will be recorded as a late cancellation.</p>}
         </div>

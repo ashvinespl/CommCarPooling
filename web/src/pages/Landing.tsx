@@ -62,6 +62,10 @@ export function Landing() {
             <li>The exact meeting point is only shown once a driver accepts you.</li>
             <li>You can message in the app, and report or block anyone.</li>
             <li><strong>We don’t verify identity, licences or insurance.</strong> Drivers self-declare. Use your judgement.</li>
+            <li>We don’t provide insurance. Vehicle insurance is each driver’s own responsibility.</li>
+            <li>Drivers may decline a request or end a ride at any time.</li>
+            <li>Everyone pledges to treat drivers and passengers with respect.</li>
+            <li><strong>In an emergency, call 911.</strong></li>
           </ul>
           <Link to="/info/safety" className="mt-3 inline-block text-sm font-medium text-brand-700 hover:underline">Community Safety Rules</Link>
         </div>

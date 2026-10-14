@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Link } from '../components/Link';
 import { useApp } from '../state/AppState';
-import { Field, Modal, PageHeader, PrivateBadge } from '../components/ui';
+import { Field, Modal, PageHeader, PrivateBadge, SafetyNotice, INSURANCE_NOTE } from '../components/ui';
 import { PAGES } from './Info';
 import { registerUser } from '../mock/engine';
 import type { RolePref } from '../types';
@@ -78,7 +78,7 @@ export function Onboarding() {
   const { runWith, signInAs, track } = useApp();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [f, setF] = useState({ displayName: '', fullName: '', role: 'passenger' as RolePref, phone: '', age: false, terms: false, privacy: false, safety: false, driverDecl: false, source: '' });
+  const [f, setF] = useState({ displayName: '', fullName: '', role: 'passenger' as RolePref, phone: '', age: false, terms: false, privacy: false, safety: false, respect: false, driverDecl: false, source: '' });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
   const isDriver = f.role !== 'passenger';
   const [policy, setPolicy] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export function Onboarding() {
     e.preventDefault();
     const res = runWith((db, now) => registerUser(db, {
       email: params.get('email') || `new-${Date.now()}@example.test`, displayName: f.displayName, fullName: f.fullName,
-      role: f.role, phone: f.phone, ageConfirmed: f.age, consents: f.terms && f.privacy && f.safety,
+      role: f.role, phone: f.phone, ageConfirmed: f.age, consents: f.terms && f.privacy && f.safety, respectPledge: f.respect,
       driverDeclaration: f.driverDecl, acquisitionSource: f.source,
     }, now), 'Welcome to the pilot!');
     if (res) { signInAs(res.userId); track('signup_completed'); navigate(params.get('next') || '/search'); }
@@ -137,7 +137,9 @@ export function Onboarding() {
           <Check checked={f.terms} onChange={(v) => set('terms', v)}>I agree to the <PolicyLink page="terms">Terms of Use</PolicyLink>.</Check>
           <Check checked={f.privacy} onChange={(v) => set('privacy', v)}>I have read the <PolicyLink page="privacy">Privacy Notice</PolicyLink>.</Check>
           <Check checked={f.safety} onChange={(v) => set('safety', v)}>I will follow the <PolicyLink page="safety">Community Safety Rules</PolicyLink>.</Check>
+          <Check checked={f.respect} onChange={(v) => set('respect', v)}>I will treat drivers and passengers with respect: courteous, punctual, and free of harassment or discrimination.</Check>
         </fieldset>
+        <SafetyNotice />
         {isDriver && <DriverDeclarationChecks checked={f.driverDecl} onChange={(v) => set('driverDecl', v)} />}
         <button className="btn-primary w-full">Finish</button>
       </form>
@@ -163,12 +165,12 @@ export function DriverDeclarationChecks({ checked, onChange }: { checked: boolea
       <p className="font-semibold">Driver declaration</p>
       <ul className="my-2 list-disc space-y-1 pl-5 text-ink-700">
         <li>I hold a valid driver’s licence for the vehicle I drive.</li>
-        <li>The vehicle is insured, and I have checked that my coverage suits carpooling with cost-sharing.</li>
+        <li>The vehicle is insured, and I have checked that my coverage suits carpooling with cost-sharing. I understand that insurance is my own responsibility.</li>
         <li>I only offer seats on personal trips I’m already making. I am not providing a commercial ride service.</li>
         <li>Contributions I propose only cover trip costs (fuel, parking, wear). I don’t make a profit.</li>
       </ul>
       <Check checked={checked} onChange={onChange}>I confirm all of the above.</Check>
-      <p className="mt-2 text-xs text-ink-500">This is a self-declaration. The pilot does not verify licences or insurance.</p>
+      <p className="mt-2 text-xs text-ink-500">This is a self-declaration. The pilot does not verify licences or insurance. {INSURANCE_NOTE}</p>
     </div>
   );
 }
